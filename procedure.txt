@@ -1,0 +1,443 @@
+# Download SRA-toolkit via curl comment.
+
+curl --output sratoolkit.tar.gz https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-mac64.tar.gz
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 84.8M  100 84.8M    0     0  43.8M      0  0:00:01  0:00:01 --:--:-- 43.9M
+
+# Fetch eccDNA treated data via SRA-toolkit
+
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624456
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624457
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624458
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624459
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624460
+../sratoolkit.3.1.0-mac-x86_64/bin/prefetch SRR14624461
+
+# Validation of the SRA files
+
+../sratoolkit.3.1.0-mac-x86_64/bin/vdb-validate SRR14624456
+../sratoolkit.3.1.0-mac-x86_64/bin/vdb-validate SRR14624457
+
+# Get FASTQ files
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624456
+Read 24098934 spots for SRR14624456
+Written 24098934 spots for SRR14624456
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624457
+Read 24099178 spots for SRR14624457
+Written 24099178 spots for SRR14624457
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624458
+Read 34433788 spots for SRR14624458
+Written 34433788 spots for SRR14624458
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624459
+Read 19760929 spots for SRR14624459
+Written 19760929 spots for SRR14624459
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624460
+Read 24187332 spots for SRR14624460
+Written 24187332 spots for SRR14624460
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fastq-dump SRR14624461
+Read 43081878 spots for SRR14624461
+Written 43081878 spots for SRR14624461
+
+# Install fastqc.
+
+brew install fastqc
+
+# Install Quality Control fastqc
+
+install via /usr/local/Cellar; path dependent; terminal running file
+
+# Quality Control using fastqc
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624456.fastq
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624457.fastq
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624458.fastq
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624459.fastq
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624460.fastq
+./FastQC.app/Contents/MacOS/fastqc data/SRR14624461.fastq
+
+# Run Trimmomatic-0.39 for triming data with executable.sh
+
+java -jar ./Trimmomatic-0.39/trimmomatic-0.39.jar SE -phred33 \
+data/SRR14624456.fastq SRR14624456.fq \
+ILLUMINACLIP:Trimmomatic-0.39/adapters/TruSeq3-SE.fa:2:30:10:1:true \
+LEADING:3 \
+TRAILING:3 \
+SLIDINGWINDOW:4:15 \
+MINLEN:50
+
+# Run STAR to generate genome index
+
+/Users/billdeng/PycharmProjects/eccDNA_RCA_nanopore/STAR/STAR --runThreadN 8 \
+     --runMode genomeGenerate \
+     --genomeDir /Users/billdeng/PycharmProjects/eccDNA_RCA_nanopore/geno_data \
+     --genomeFastaFiles /Users/billdeng/PycharmProjects/eccDNA_RCA_nanopore/geno_data/data/GCF_000001635.27/GCF_000001635.27_GRCm39_genomic.fna \
+     --sjdbGTFfile /Users/billdeng/PycharmProjects/eccDNA_RCA_nanopore/genomic.gtf \
+     --sjdbOverhang 99
+
+Apr 06 17:33:20 ..... started STAR run
+Apr 06 17:33:20 ... starting to generate Genome files
+Apr 06 17:34:02 ..... processing annotations GTF
+
+Fatal INPUT FILE error, no valid exon lines in the GTF file: /Users/billdeng/PycharmProjects/eccDNA_RCA_nanopore/gencode.vM24.annotation.gtf
+Solution: check the formatting of the GTF file. One likely cause is the difference in chromosome naming between GTF and FASTA file.
+
+# Encounter an error when processing with the annotation file. Will need to change an annotation file.
+
+# STAR is taking millions of years to run. Don't use STAR
+
+# Use HISAT-3N instead.
+git clone https://github.com/DaehwanKimLab/hisat2.git hisat-3n
+cd hisat-3n
+git checkout -b hisat-3n origin/hisat-3n
+make
+
+./aln_sink.h:2396:5: note: in instantiation of member function 'AlnSink3NSam<unsigned long long>::appendMate' requested here
+    AlnSink3NSam(
+    ^
+hisat2.cpp:4654:34: note: in instantiation of member function 'AlnSink3NSam<unsigned long long>::AlnSink3NSam' requested here
+                    mssink = new AlnSink3NSam<index_t>(
+                                 ^
+hisat2.cpp:4959:4: note: in instantiation of function template specialization 'driver<SString<char>>' requested here
+                        driver<SString<char> >("DNA", bt2indexs, outfile);
+                        ^
+^Z
+zsh: suspended  make
+(eccDNA_RCA_nanopore) billdeng@Bills-MacBook-Pro hisat-3n %
+
+# Actually I don't need Hisat-3N, I need Hisat2
+
+# Build index using hisat2, with GRCm38 (mm10 is a possible option)
+
+Run with
+
+make_grcm38.sh
+
+#!/bin/sh
+
+#
+# Downloads sequence for the GRCm38 release 81 version of M. Musculus (mouse) from
+# Ensembl.
+#
+# By default, this script builds and index for just the base files,
+# since alignments to those sequences are the most useful.  To change
+# which categories are built by this script, edit the CHRS_TO_INDEX
+# variable below.
+#
+
+ENSEMBL_RELEASE=84
+ENSEMBL_GRCm38_BASE=ftp://ftp.ensembl.org/pub/release-${ENSEMBL_RELEASE}/fasta/mus_musculus/dna
+
+get() {
+	file=$1
+	if ! wget --version >/dev/null 2>/dev/null ; then
+		if ! curl --version >/dev/null 2>/dev/null ; then
+			echo "Please install wget or curl somewhere in your PATH"
+			exit 1
+		fi
+		curl -o `basename $1` $1
+		return $?
+	else
+		wget $1
+		return $?
+	fi
+}
+
+HISAT2_BUILD_EXE=../hisat2/hisat2-build
+if [ ! -x "$HISAT2_BUILD_EXE" ] ; then
+	if ! which hisat2-build ; then
+		echo "Could not find hisat2-build in current directory or in PATH"
+		exit 1
+	else
+		HISAT2_BUILD_EXE=`which hisat2-build`
+	fi
+fi
+
+rm -f genome.fa
+F=Mus_musculus.GRCm38.dna.primary_assembly.fa
+if [ ! -f $F ] ; then
+	get ${ENSEMBL_GRCm38_BASE}/$F.gz || (echo "Error getting $F" && exit 1)
+	gunzip $F.gz || (echo "Error unzipping $F" && exit 1)
+	mv $F genome.fa
+fi
+
+CMD="${HISAT2_BUILD_EXE} genome.fa genome"
+echo Running $CMD
+if $CMD ; then
+	echo "genome index built; you may remove fasta files"
+else
+	echo "Index building failed; see error message"
+fi
+
+Returning from GFM constructor
+Returning from initFromVector
+Wrote 1165549977 bytes to primary GFM file: genome.5.ht2
+Wrote 675339278 bytes to secondary GFM file: genome.6.ht2
+Re-opening _in5 and _in5 as input streams
+Returning from HGFM constructor
+Headers:
+    len: 2652783500
+    gbwtLen: 2652783501
+    nodes: 2652783501
+    sz: 663195875
+    gbwtSz: 663195876
+    lineRate: 6
+    offRate: 4
+    offMask: 0xfffffff0
+    ftabChars: 10
+    eftabLen: 0
+    eftabSz: 0
+    ftabLen: 1048577
+    ftabSz: 4194308
+    offsLen: 165798969
+    offsSz: 663195876
+    lineSz: 64
+    sideSz: 64
+    sideGbwtSz: 48
+    sideGbwtLen: 192
+    numSides: 13816581
+    numLines: 13816581
+    gbwtTotLen: 884261184
+    gbwtTotSz: 884261184
+    reverse: 0
+    linearFM: Yes
+Total time for call to driver() for forward index: 00:58:57
+genome index built; you may remove fasta files
+
+# Due to Hisat2 requirements, I need to de-interleave the file I believe
+
+curl -sL git.io/pairfq_lite | perl - splitpairs -i trimmed/SRR14624456.fq -f deinterleave/SRR14624456_1.fq -r deinterleave/SRR14624456_2.fq
+Use of uninitialized value $c in string ne at - line 595, <$fh> line 25058484.
+
+# Run hisat2 for mapping
+
+hisat2 -x /path/to/genome_index -1 /path/to/reads_1.fq -2 /path/to/reads_2.fq -S /path/to/output.sam
+
+# Don't know why it is not working, re-build my index
+
+./hisat2/hisat2-build ./grcm38/genome.fa ./genome
+
+0 reads
+0.00% overall alignment rate
+
+# So weird.
+
+# Redo split files
+/sratoolkit.3.1.0-mac-x86_64/bin/fasterq-dump --split-files SRR1462445
+9 -O ./
+
+# Let us try bowtie2
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2-build ./grcm38/genome.fa genome
+
+Returning block of 255826158 for bucket 7
+Exited Ebwt loop
+fchr[A]: 0
+fchr[C]: 773280124
+fchr[G]: 1325927941
+fchr[T]: 1878618059
+fchr[$]: 2652783500
+Exiting Ebwt::buildToDisk()
+Returning from initFromVector
+Wrote 888467894 bytes to primary EBWT file: genome.rev.1.bt2.tmp
+Wrote 663195880 bytes to secondary EBWT file: genome.rev.2.bt2.tmp
+Re-opening _in1 and _in2 as input streams
+Returning from Ebwt constructor
+Headers:
+    len: 2652783500
+    bwtLen: 2652783501
+    sz: 663195875
+    bwtSz: 663195876
+    lineRate: 6
+    offRate: 4
+    offMask: 0xfffffff0
+    ftabChars: 10
+    eftabLen: 20
+    eftabSz: 80
+    ftabLen: 1048577
+    ftabSz: 4194308
+    offsLen: 165798969
+    offsSz: 663195876
+    lineSz: 64
+    sideSz: 64
+    sideBwtSz: 48
+    sideBwtLen: 192
+    numSides: 13816581
+    numLines: 13816581
+    ebwtTotLen: 884261184
+    ebwtTotSz: 884261184
+    color: 0
+    reverse: 1
+Total time for backward call to driver() for mirror index: 01:07:26
+Renaming genome.3.bt2.tmp to genome.3.bt2
+Renaming genome.4.bt2.tmp to genome.4.bt2
+Renaming genome.1.bt2.tmp to genome.1.bt2
+Renaming genome.2.bt2.tmp to genome.2.bt2
+Renaming genome.rev.1.bt2.tmp to genome.rev.1.bt2
+Renaming genome.rev.2.bt2.tmp to genome.rev.2.bt2
+
+# Bowtie still need 2 fastq, let us re-do the whole process
+
+# Make a new folder for fasterq-dump dump_data and acquire data again
+
+../sratoolkit.3.1.0-mac-x86_64/bin/fasterq-dump --threads 4 --progress SRR14624456
+../../sratoolkit.3.1.0-mac-x86_64/bin/fasterq-dump --threads 4 --progress SRR14624457
+join   :|----------------ls---------------------------------- 100%
+concat :|-------------------------------------------------- 100%
+spots read      : 24,099,178
+reads read      : 48,198,356
+reads written   : 48,198,356
+ ../../sratoolkit.3.1.0-mac-x86_64/bin/fasterq-dump --threads 4 --progress SRR14624459
+..
+
+# Execute bowtie for mapping
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR14624456/SRR14624456_1.fastq -2 dump_data/SRR14624456/SRR14624456_2.fastq -S dump_data/SRR14624456/SRR14624456.sam
+
+24098934 reads; of these:
+  24098934 (100.00%) were paired; of these:
+    8249986 (34.23%) aligned concordantly 0 times
+    9916342 (41.15%) aligned concordantly exactly 1 time
+    5932606 (24.62%) aligned concordantly >1 times
+    ----
+    8249986 pairs aligned concordantly 0 times; of these:
+      2584387 (31.33%) aligned discordantly 1 time
+    ----
+    5665599 pairs aligned 0 times concordantly or discordantly; of these:
+      11331198 mates make up the pairs; of these:
+        6049459 (53.39%) aligned 0 times
+        4211549 (37.17%) aligned exactly 1 time
+        1070190 (9.44%) aligned >1 times
+87.45% overall alignment rate
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR14624457/SRR14624457_1.fastq -2 dump_data/SRR14624457/SRR14624457_2.fastq -S dump_data/SRR14624457/SRR14624457.sam
+
+24099178 reads; of these:
+  24099178 (100.00%) were paired; of these:
+    8176706 (33.93%) aligned concordantly 0 times
+    10034185 (41.64%) aligned concordantly exactly 1 time
+    5888287 (24.43%) aligned concordantly >1 times
+    ----
+    8176706 pairs aligned concordantly 0 times; of these:
+      2550814 (31.20%) aligned discordantly 1 time
+    ----
+    5625892 pairs aligned 0 times concordantly or discordantly; of these:
+      11251784 mates make up the pairs; of these:
+        6024570 (53.54%) aligned 0 times
+        4210778 (37.42%) aligned exactly 1 time
+        1016436 (9.03%) aligned >1 times
+87.50% overall alignment rate
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR14624458/SRR14624458_1.fastq -2 dump_data/SRR14624458/SRR14624458_2.fastq -S dump_data/SRR14624458/SRR14624458.sam
+
+34433788 reads; of these:
+  34433788 (100.00%) were paired; of these:
+    11930483 (34.65%) aligned concordantly 0 times
+    14163726 (41.13%) aligned concordantly exactly 1 time
+    8339579 (24.22%) aligned concordantly >1 times
+    ----
+    11930483 pairs aligned concordantly 0 times; of these:
+      3364908 (28.20%) aligned discordantly 1 time
+    ----
+    8565575 pairs aligned 0 times concordantly or discordantly; of these:
+      17131150 mates make up the pairs; of these:
+        9313726 (54.37%) aligned 0 times
+        6375077 (37.21%) aligned exactly 1 time
+        1442347 (8.42%) aligned >1 times
+86.48% overall alignment rate
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR14624459/SRR14624459_1.fastq -2 dump_data/SRR14624459/SRR14624459_2.fastq -S dump_data/SRR14624459/SRR14624459.sam
+
+19760929 reads; of these:
+  19760929 (100.00%) were paired; of these:
+    6806759 (34.45%) aligned concordantly 0 times
+    7870006 (39.83%) aligned concordantly exactly 1 time
+    5084164 (25.73%) aligned concordantly >1 times
+    ----
+    6806759 pairs aligned concordantly 0 times; of these:
+      2128236 (31.27%) aligned discordantly 1 time
+    ----
+    4678523 pairs aligned 0 times concordantly or discordantly; of these:
+      9357046 mates make up the pairs; of these:
+        5032036 (53.78%) aligned 0 times
+        3491205 (37.31%) aligned exactly 1 time
+        833805 (8.91%) aligned >1 times
+87.27% overall alignment rate
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR146244560/SRR14624460_1.fastq -2 dump_data/SRR14624460/SRR14624460_2.fastq -S dump_data/SRR14624460/SRR14624460.sam
+
+24187332 reads; of these:
+  24187332 (100.00%) were paired; of these:
+    8233871 (34.04%) aligned concordantly 0 times
+    9715527 (40.17%) aligned concordantly exactly 1 time
+    6237934 (25.79%) aligned concordantly >1 times
+    ----
+    8233871 pairs aligned concordantly 0 times; of these:
+      2554897 (31.03%) aligned discordantly 1 time
+    ----
+    5678974 pairs aligned 0 times concordantly or discordantly; of these:
+      11357948 mates make up the pairs; of these:
+        6161150 (54.25%) aligned 0 times
+        4273047 (37.62%) aligned exactly 1 time
+        923751 (8.13%) aligned >1 times
+87.26% overall alignment rate
+
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2 --no-unal -p 4 -x genome -1 dump_data/SRR14624461/SRR14624461_1.fastq -2 dump_data/SRR14624461/SRR14624461_2.fastq -S dump_data/SRR14624461/SRR14624461.sam
+
+43081878 reads; of these:
+  43081878 (100.00%) were paired; of these:
+    14677488 (34.07%) aligned concordantly 0 times
+    17209884 (39.95%) aligned concordantly exactly 1 time
+    11194506 (25.98%) aligned concordantly >1 times
+    ----
+    14677488 pairs aligned concordantly 0 times; of these:
+      4251767 (28.97%) aligned discordantly 1 time
+    ----
+    10425721 pairs aligned 0 times concordantly or discordantly; of these:
+      20851442 mates make up the pairs; of these:
+        11347379 (54.42%) aligned 0 times
+        7846402 (37.63%) aligned exactly 1 time
+        1657661 (7.95%) aligned >1 times
+86.83% overall alignment rate
+
+# Next, use featureCounts to count the level of transcripts expression
+
+# First, get featureCounts via biConda
+
+conda create -n featurecounts -c bioconda subread
+
+# Run FeatureCounts
+
+featureCounts -p -a ../gencode.vM24.annotation.gtf -o SRR14624456.txt ../dump_data/SRR14624456/SRR14624456.sam
+
+//================================= Running ==================================\\
+||                                                                            ||
+|| Load annotation file gencode.vM24.annotation.gtf ...                       ||
+||    Features : 842873                                                       ||
+||    Meta-features : 55385                                                   ||
+||    Chromosomes/contigs : 22                                                ||
+||                                                                            ||
+|| Process SAM file SRR14624456.sam...                                        ||
+||    Paired-end reads are included.                                          ||
+||    The reads are assigned on the single-end mode.                          ||
+||    Total alignments : 42148409                                             ||
+||    Successfully assigned alignments : 35952187 (85.3%)                     ||
+||    Running time : 0.85 minutes                                             ||
+||                                                                            ||
+|| Write the final count table.                                               ||
+|| Write the read assignment summary.                                         ||
+||                                                                            ||
+|| Summary of counting results can be found in file "SRR14624456.txt.summary  ||
+|| "                                                                          ||
+||                                                                            ||
+
+
+
+
+
+
