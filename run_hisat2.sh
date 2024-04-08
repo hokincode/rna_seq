@@ -1,0 +1,1 @@
+hisat2/hisat2 -x ./grcm38/genome -1 ./deinterleave/SRR14624456_1.fq -2 ./deinterleave/SRR14624456_2.fq -S ./hisat2_output/SRR14624456.sam

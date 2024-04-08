@@ -1,0 +1,1 @@
+./bow/bowtie2-2.5.3-macos-x86_64/bowtie2-build ./grcm38/genome.fa genome
