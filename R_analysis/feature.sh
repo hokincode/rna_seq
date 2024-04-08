@@ -1,0 +1,1 @@
+featureCounts -T 4 -p -a ../gencode.vM24.annotation.gtf -o SRR14624461.txt ../dump_data/SRR14624461/SRR14624461.sam
